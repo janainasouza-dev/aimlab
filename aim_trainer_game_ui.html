@@ -1,0 +1,424 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --hud:#00e5ff;--hud2:#ff3d3d;--hud3:#ffd600;--bg:#080c10;--bg2:#0d1420;--bg3:#121a26;
+  --panel:#0a1118;--border:#1e3040;--accent:#00e5ff;--kill:#ff3d3d;--warn:#ffd600;
+}
+#G{width:100%;background:var(--bg);font-family:'Rajdhani',sans-serif;overflow:hidden;border-radius:4px;position:relative}
+#scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:100}
+#vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);pointer-events:none;z-index:99}
+#hud-top{display:flex;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--border);position:relative}
+#logo{padding:8px 14px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--border)}
+#logo span{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--hud);letter-spacing:0.12em}
+#logo-icon{width:22px;height:22px;position:relative}
+#logo-icon:before,#logo-icon:after{content:'';position:absolute;border:1.5px solid var(--hud)}
+#logo-icon:before{inset:4px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+#logo-icon:after{inset:0;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);opacity:.4}
+#stats-row{flex:1;display:flex;align-items:stretch}
+.hud-stat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 10px;border-right:1px solid var(--border);position:relative}
+.hud-stat:last-child{border-right:none}
+.hs-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:#4a6070;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1px}
+.hs-val{font-size:20px;font-weight:700;letter-spacing:0.04em;line-height:1}
+.hs-val.c-cyan{color:var(--hud)}
+.hs-val.c-red{color:var(--hud2)}
+.hs-val.c-yellow{color:var(--hud3)}
+.hs-val.c-white{color:#e0eaf0}
+.hud-stat:after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--hud);transform:scaleX(0);transition:transform .2s}
+.hud-stat.active:after{transform:scaleX(1)}
+#mode-bar{display:flex;background:#060a0e;border-bottom:1px solid var(--border);padding:0 14px;gap:0}
+.mb{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#2a4050;padding:8px 14px;border:none;background:transparent;cursor:pointer;position:relative;transition:color .15s;border-bottom:2px solid transparent}
+.mb:hover{color:#5a8090}
+.mb.on{color:var(--hud);border-bottom-color:var(--hud)}
+.mb.on:before{content:'> ';opacity:.6}
+#arena{position:relative;width:100%;height:330px;cursor:none;overflow:hidden;background:var(--bg)}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+#xh{position:absolute;pointer-events:none;transform:translate(-50%,-50%);z-index:10}
+#overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;background:rgba(6,10,14,0.92)}
+.ov-logo{font-family:'Share Tech Mono',monospace;font-size:28px;color:var(--hud);letter-spacing:0.3em;margin-bottom:4px;text-shadow:0 0 20px var(--hud)}
+.ov-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:#2a5060;letter-spacing:0.2em;margin-bottom:20px}
+.ov-mode{font-size:13px;color:#4a7080;letter-spacing:0.06em;margin-bottom:18px}
+#ov-corner{position:absolute;top:12px;left:12px;width:24px;height:24px;border-top:1.5px solid var(--hud);border-left:1.5px solid var(--hud)}
+#ov-corner2{position:absolute;bottom:12px;right:12px;width:24px;height:24px;border-bottom:1.5px solid var(--hud);border-right:1.5px solid var(--hud)}
+.ov-line{width:200px;height:1px;background:var(--border);margin-bottom:20px;position:relative}
+.ov-line:before{content:'';position:absolute;left:0;top:0;height:1px;width:60%;background:var(--hud);animation:scan 2s ease-in-out infinite}
+@keyframes scan{0%,100%{width:0}50%{width:100%}}
+#play-btn{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:0.2em;color:var(--bg);background:var(--hud);border:none;padding:10px 28px;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:background .15s}
+#play-btn:hover{background:#33eeff}
+#hit-f{position:absolute;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .06s;background:radial-gradient(ellipse at center,rgba(0,229,255,0.15) 0%,transparent 70%)}
+#miss-f{position:absolute;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .1s;background:radial-gradient(ellipse at center,rgba(255,61,61,0.12) 0%,transparent 70%)}
+#kill-banner{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.2em;color:var(--hud);background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);padding:4px 16px;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);z-index:16;opacity:0;transition:opacity .2s}
+#kill-banner.show{opacity:1}
+#timer-track{height:3px;background:#0d1420;position:relative;overflow:hidden}
+#timer-fill{height:3px;background:var(--hud);width:100%;transition:width .1s linear;position:absolute;left:0;top:0}
+#timer-fill:after{content:'';position:absolute;right:0;top:-1px;width:4px;height:5px;background:var(--hud)}
+#hud-bot{display:flex;align-items:center;padding:6px 14px;background:var(--panel);border-top:1px solid var(--border);gap:16px}
+.hb-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:#2a4050;letter-spacing:0.15em}
+#sens{flex:1;accent-color:var(--hud)}
+#sens-v{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--hud);min-width:20px;text-align:right}
+#ammo{display:flex;gap:3px;align-items:center;margin-left:auto}
+.bullet{width:4px;height:10px;background:var(--hud3);clip-path:polygon(0% 15%,50% 0%,100% 15%,100% 100%,0% 100%);transition:background .1s}
+.bullet.spent{background:#1e2830}
+</style>
+
+<div id="G">
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+  <div id="hud-top">
+    <div id="logo">
+      <div id="logo-icon"></div>
+      <span>AIMLAB</span>
+    </div>
+    <div id="stats-row">
+      <div class="hud-stat active"><span class="hs-label">ACERTOS</span><span class="hs-val c-cyan" id="s-hits">0</span></div>
+      <div class="hud-stat"><span class="hs-label">ERROS</span><span class="hs-val c-red" id="s-miss">0</span></div>
+      <div class="hud-stat"><span class="hs-label">PRECISÃO</span><span class="hs-val c-yellow" id="s-acc">--%</span></div>
+      <div class="hud-stat"><span class="hs-label">PONTOS</span><span class="hs-val c-white" id="s-score">0</span></div>
+      <div class="hud-stat"><span class="hs-label">TEMPO</span><span class="hs-val c-cyan" id="s-time">30s</span></div>
+      <div class="hud-stat"><span class="hs-label">RECORDE</span><span class="hs-val c-yellow" id="s-best">--</span></div>
+    </div>
+  </div>
+  <div id="mode-bar">
+    <button class="mb on" data-mode="flick">FLICK</button>
+    <button class="mb" data-mode="tracking">TRACKING</button>
+    <button class="mb" data-mode="micro">MICROFLICK</button>
+    <button class="mb" data-mode="spray">SPRAY</button>
+  </div>
+  <div id="timer-track"><div id="timer-fill"></div></div>
+  <div id="arena">
+    <canvas id="cv"></canvas>
+    <svg id="xh" width="28" height="28" viewBox="0 0 28 28">
+      <line x1="14" y1="2" x2="14" y2="9" stroke="#00e5ff" stroke-width="1.2" opacity="0.9"/>
+      <line x1="14" y1="19" x2="14" y2="26" stroke="#00e5ff" stroke-width="1.2" opacity="0.9"/>
+      <line x1="2" y1="14" x2="9" y2="14" stroke="#00e5ff" stroke-width="1.2" opacity="0.9"/>
+      <line x1="19" y1="14" x2="26" y2="14" stroke="#00e5ff" stroke-width="1.2" opacity="0.9"/>
+      <rect x="12.2" y="12.2" width="3.6" height="3.6" fill="none" stroke="#00e5ff" stroke-width="1" opacity="0.7"/>
+      <circle cx="14" cy="14" r="1.2" fill="#00e5ff" opacity="0.95"/>
+    </svg>
+    <div id="hit-f"></div>
+    <div id="miss-f"></div>
+    <div id="kill-banner" id="kb">+ HIT</div>
+    <div id="overlay">
+      <div id="ov-corner"></div>
+      <div id="ov-corner2"></div>
+      <div class="ov-logo">AIMLAB</div>
+      <div class="ov-sub">TACTICAL AIM TRAINER</div>
+      <div class="ov-line"></div>
+      <div class="ov-mode" id="ov-desc">MODO: FLICK — Destrua os alvos o mais rápido possível</div>
+      <button id="play-btn">[ INICIAR TREINO ]</button>
+    </div>
+  </div>
+  <div id="hud-bot">
+    <span class="hb-label">SENS</span>
+    <input type="range" id="sens" min="1" max="10" step="1" value="5" style="width:100px">
+    <span id="sens-v">5</span>
+    <div id="ammo"></div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const arena=document.getElementById('arena'),xh=document.getElementById('xh');
+const overlay=document.getElementById('overlay'),playBtn=document.getElementById('play-btn');
+const hitF=document.getElementById('hit-f'),missF=document.getElementById('miss-f');
+const kb=document.getElementById('kill-banner');
+const ovDesc=document.getElementById('ov-desc');
+const ammoDiv=document.getElementById('ammo');
+
+let W,H,mode='flick',running=false;
+let hits=0,misses=0,score=0,timeLeft=30,best={flick:null,tracking:null,micro:null,spray:null};
+let targets=[],trackT=null,tvx=0,tvy=0;
+let particles=[];
+let sprayPat=[],sprayIdx=0,mouseDown=false,sprayActive=false,sprayShots=[],lastSprayT=0;
+let raf=null,timerInt=null,mx=0,my=0;
+const MAX_AMMO=30;
+
+const modeText={
+  flick:'MODO: FLICK — Destrua os alvos o mais rápido possível',
+  tracking:'MODO: TRACKING — Mantenha a mira sobre o alvo em movimento',
+  micro:'MODO: MICROFLICK — Precisão máxima em alvos minúsculos',
+  spray:'MODO: SPRAY — Segure o clique e controle o recoil'
+};
+
+function resize(){W=arena.clientWidth;H=arena.clientHeight;cv.width=W;cv.height=H;}
+resize();window.addEventListener('resize',resize);
+
+document.querySelectorAll('.mb').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.mb').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');mode=b.dataset.mode;
+    ovDesc.textContent=modeText[mode];
+    if(running)stopGame();showOverlay();
+  });
+});
+
+arena.addEventListener('mousemove',e=>{
+  const r=arena.getBoundingClientRect();
+  mx=e.clientX-r.left;my=e.clientY-r.top;
+  xh.style.left=mx+'px';xh.style.top=my+'px';
+});
+
+arena.addEventListener('click',e=>{
+  if(!running||mode==='tracking'||mode==='spray')return;
+  const r=arena.getBoundingClientRect();
+  handleClick(e.clientX-r.left,e.clientY-r.top);
+});
+
+arena.addEventListener('mousedown',e=>{
+  if(!running||mode!=='spray')return;
+  mouseDown=true;sprayActive=true;sprayIdx=0;sprayShots=[];lastSprayT=0;
+});
+arena.addEventListener('mouseup',()=>{mouseDown=false;sprayActive=false;});
+arena.addEventListener('mouseleave',()=>{mouseDown=false;sprayActive=false;});
+
+document.getElementById('sens').addEventListener('input',function(){document.getElementById('sens-v').textContent=this.value;});
+document.getElementById('play-btn').addEventListener('click',startGame);
+
+function showOverlay(){overlay.style.display='flex';playBtn.textContent='[ INICIAR TREINO ]';}
+function hideOverlay(){overlay.style.display='none';}
+
+function buildAmmo(n){
+  ammoDiv.innerHTML='';
+  for(let i=0;i<MAX_AMMO;i++){
+    const d=document.createElement('div');
+    d.className='bullet'+(i>=n?' spent':'');
+    ammoDiv.appendChild(d);
+  }
+}
+
+function handleClick(cx,cy){
+  let hit=false;
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    const dx=cx-t.x,dy=cy-t.y;
+    if(Math.sqrt(dx*dx+dy*dy)<=t.r){
+      spawnParticles(t.x,t.y,'#00e5ff',10);
+      targets.splice(i,1);hits++;score+=10;
+      flashKill('+10 FRAG');flashHit();
+      updateAmmo(-1);
+      if(mode==='flick')spawnFlick();
+      if(mode==='micro')spawnMicro();
+      hit=true;break;
+    }
+  }
+  if(!hit){misses++;flashMiss();}
+  updateHUD();
+}
+
+function flashHit(){hitF.style.opacity='1';setTimeout(()=>hitF.style.opacity='0',80);}
+function flashMiss(){missF.style.opacity='1';setTimeout(()=>missF.style.opacity='0',120);}
+let kbTimeout=null;
+function flashKill(txt){
+  kb.textContent=txt;kb.classList.add('show');
+  clearTimeout(kbTimeout);kbTimeout=setTimeout(()=>kb.classList.remove('show'),600);
+}
+
+let ammoLeft=MAX_AMMO;
+function updateAmmo(d){
+  ammoLeft=Math.max(0,ammoLeft+d);
+  buildAmmo(ammoLeft);
+}
+
+function spawnFlick(){
+  const r=18+Math.random()*16;
+  targets.push({x:r+Math.random()*(W-r*2),y:r+Math.random()*(H-r*2),r,born:Date.now(),life:1000+Math.random()*600,type:'flick'});
+}
+function spawnMicro(){
+  const r=6+Math.random()*7;
+  targets.push({x:r+Math.random()*(W-r*2),y:r+Math.random()*(H-r*2),r,born:Date.now(),life:600+Math.random()*300,type:'micro'});
+}
+function spawnTrack(){
+  const r=26;trackT={x:r+Math.random()*(W-r*2),y:r+Math.random()*(H-r*2),r};
+  const spd=1.2+Math.random()*1.4,ang=Math.random()*Math.PI*2;
+  tvx=Math.cos(ang)*spd;tvy=Math.sin(ang)*spd;
+}
+function buildSpray(){
+  sprayPat=[];
+  for(let i=0;i<MAX_AMMO;i++){
+    const s=i*0.9;
+    sprayPat.push({dx:(Math.random()-.5)*s*.5,dy:i*1.1*(1+i*.04)});
+  }
+}
+
+function spawnParticles(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const ang=Math.random()*Math.PI*2,spd=1.5+Math.random()*3;
+    particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:1,decay:.04+Math.random()*.04,r:1.5+Math.random()*2,color});
+  }
+}
+
+function startGame(){
+  hideOverlay();running=true;
+  hits=0;misses=0;score=0;timeLeft=30;targets=[];particles=[];sprayShots=[];ammoLeft=MAX_AMMO;buildAmmo(MAX_AMMO);
+  updateHUD();
+  document.getElementById('timer-fill').style.width='100%';
+  if(mode==='flick'){for(let i=0;i<3;i++)spawnFlick();}
+  if(mode==='micro'){for(let i=0;i<5;i++)spawnMicro();}
+  if(mode==='tracking')spawnTrack();
+  if(mode==='spray'){buildSpray();}
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('s-time').textContent=timeLeft+'s';
+    document.getElementById('timer-fill').style.width=(timeLeft/30*100)+'%';
+    if(timeLeft<=0)stopGame();
+  },1000);
+  cancelAnimationFrame(raf);
+  loop();
+}
+
+function stopGame(){
+  running=false;clearInterval(timerInt);cancelAnimationFrame(raf);
+  targets=[];trackT=null;ctx.clearRect(0,0,W,H);
+  if(best[mode]===null||score>best[mode])best[mode]=score;
+  document.getElementById('s-best').textContent=best[mode]??'--';
+  showOverlay();
+  ovDesc.textContent=`RESULTADO: ${hits} frags | ACC: ${hits+misses>0?Math.round(hits/(hits+misses)*100):0}% | SCORE: ${score}`;
+  playBtn.textContent='[ JOGAR NOVAMENTE ]';
+}
+
+function updateHUD(){
+  document.getElementById('s-hits').textContent=hits;
+  document.getElementById('s-miss').textContent=misses;
+  const tot=hits+misses;
+  document.getElementById('s-acc').textContent=tot>0?Math.round(hits/tot*100)+'%':'--%';
+  document.getElementById('s-score').textContent=score;
+  document.getElementById('s-time').textContent=timeLeft+'s';
+  document.getElementById('s-best').textContent=best[mode]??'--';
+}
+
+let lastTs=0;
+function loop(ts=0){
+  if(!running)return;
+  const now=Date.now();
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+
+  particles=particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.life-=p.decay;
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.color;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  if(mode==='flick'||mode==='micro'){
+    for(let i=targets.length-1;i>=0;i--){
+      const t=targets[i];const age=now-t.born;
+      if(age>t.life){targets.splice(i,1);misses++;flashMiss();updateHUD();
+        if(mode==='flick')spawnFlick();if(mode==='micro')spawnMicro();continue;}
+      drawTarget(t.x,t.y,t.r,age/t.life,t.type);
+    }
+    if(mode==='flick'&&targets.length<3)spawnFlick();
+    if(mode==='micro'&&targets.length<5)spawnMicro();
+  }
+
+  if(mode==='tracking'&&trackT){
+    trackT.x+=tvx;trackT.y+=tvy;
+    if(trackT.x-trackT.r<0)tvx=Math.abs(tvx);
+    if(trackT.x+trackT.r>W)tvx=-Math.abs(tvx);
+    if(trackT.y-trackT.r<0)tvy=Math.abs(tvy);
+    if(trackT.y+trackT.r>H)tvy=-Math.abs(tvy);
+    const dx=mx-trackT.x,dy=my-trackT.y;
+    const on=Math.sqrt(dx*dx+dy*dy)<=trackT.r;
+    if(on){score+=0.1;document.getElementById('s-score').textContent=Math.round(score);}
+    drawTrackTarget(trackT.x,trackT.y,trackT.r,on);
+  }
+
+  if(mode==='spray'){
+    drawSprayCenter();
+    if(mouseDown&&sprayActive&&sprayIdx<sprayPat.length){
+      const elapsed=ts-lastSprayT;
+      if(elapsed>75){
+        lastSprayT=ts;
+        const sh=sprayPat[sprayIdx];
+        const bx=mx+sh.dx,by=my+sh.dy;
+        sprayShots.push({x:bx,y:by,t:now});
+        const ddx=bx-W/2,ddy=by-H/2;
+        if(Math.sqrt(ddx*ddx+ddy*ddy)<=28){hits++;score+=5;updateHUD();flashHit();spawnParticles(bx,by,'#ffd600',4);}
+        else{misses++;updateHUD();}
+        sprayIdx++;updateAmmo(-1);
+      }
+    }
+    const filt=sprayShots.filter(s=>now-s.t<1200);
+    for(const s of filt){
+      const age=(now-s.t)/1200,alpha=1-age;
+      ctx.beginPath();ctx.arc(s.x,s.y,2.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,214,0,${alpha*.8})`;ctx.fill();
+    }
+    sprayShots=filt;
+  }
+
+  raf=requestAnimationFrame(loop);
+}
+
+function drawBg(){
+  ctx.strokeStyle='rgba(20,35,50,0.5)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle='rgba(0,229,255,0.04)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+}
+
+function drawTarget(x,y,r,frac,type){
+  const pulse=.6+Math.sin(Date.now()*.006)*.4;
+  ctx.save();
+  ctx.beginPath();ctx.arc(x,y,r+4,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(0,229,255,${.12*(1-frac)})`;ctx.lineWidth=8;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=`rgba(0,229,255,${.08+.06*pulse})`;ctx.fill();
+  ctx.strokeStyle=`rgba(0,229,255,${.9*(1-frac*.5)})`;ctx.lineWidth=1.5;ctx.stroke();
+  const inner=r*.38;
+  ctx.beginPath();ctx.arc(x,y,inner,0,Math.PI*2);
+  ctx.fillStyle=`rgba(0,229,255,${.7+.3*pulse})`;ctx.fill();
+  const arc=(1-frac)*Math.PI*2;
+  ctx.beginPath();ctx.arc(x,y,r+8,-Math.PI/2,-Math.PI/2+arc);
+  ctx.strokeStyle=`rgba(255,61,61,${.9*(1-frac*.3)})`;ctx.lineWidth=2;ctx.stroke();
+  for(let i=0;i<4;i++){
+    const a=i*Math.PI/2,ox=Math.cos(a)*(r+14),oy=Math.sin(a)*(r+14);
+    const ox2=Math.cos(a)*(r+20),oy2=Math.sin(a)*(r+20);
+    ctx.beginPath();ctx.moveTo(x+ox,y+oy);ctx.lineTo(x+ox2,y+oy2);
+    ctx.strokeStyle=`rgba(0,229,255,${.3*(1-frac)})`;ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawTrackTarget(x,y,r,on){
+  const color=on?'#00e5ff':'#ffd600';
+  const alpha=on?.2:.08;
+  ctx.save();
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=`${color}${Math.round(alpha*255).toString(16).padStart(2,'0')}`;ctx.fill();
+  ctx.strokeStyle=color;ctx.lineWidth=on?2:1.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r*.25,0,Math.PI*2);
+  ctx.fillStyle=color;ctx.fill();
+  for(let i=0;i<4;i++){
+    const a=i*Math.PI/2;
+    ctx.beginPath();ctx.moveTo(x+Math.cos(a)*(r+6),y+Math.sin(a)*(r+6));
+    ctx.lineTo(x+Math.cos(a)*(r+16),y+Math.sin(a)*(r+16));
+    ctx.strokeStyle=`${color}80`;ctx.lineWidth=1.5;ctx.stroke();
+  }
+  if(on){spawnParticles(x+Math.cos(Date.now()*.003)*r,y+Math.sin(Date.now()*.003)*r,'#00e5ff',1);}
+  ctx.restore();
+}
+
+function drawSprayCenter(){
+  const x=W/2,y=H/2;
+  ctx.save();
+  for(const rv of[50,32,18]){
+    ctx.beginPath();ctx.arc(x,y,rv,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(30,48,64,0.9)`;ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(x,y,28,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,214,0,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);
+  ctx.fillStyle='#ffd600';ctx.fill();
+  ctx.font='9px "Share Tech Mono",monospace';
+  ctx.fillStyle='rgba(74,96,112,.8)';ctx.textAlign='center';
+  ctx.fillText('SEGURE + CONTROLE RECOIL',x,y+72);
+  ctx.restore();
+}
+</script>
